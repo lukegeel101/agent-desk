@@ -1,0 +1,40 @@
+/* Reading styles for agent replies (Markdown) and the live draft caret.
+   Scoped to .wm-md. */
+.wm-md { font-size: 14.5px; line-height: 1.65; color: var(--foreground); overflow-wrap: anywhere; }
+.wm-md > :first-child { margin-top: 0; }
+.wm-md > :last-child { margin-bottom: 0; }
+.wm-md p { margin: 0.6em 0; }
+.wm-md h1, .wm-md h2, .wm-md h3, .wm-md h4 { font-weight: 600; line-height: 1.3; margin: 1.3em 0 0.45em; letter-spacing: -0.01em; }
+.wm-md h1 { font-size: 1.25em; }
+.wm-md h2 { font-size: 1.12em; padding-bottom: 0.3em; border-bottom: 1px solid var(--border); }
+.wm-md h3 { font-size: 1.02em; }
+.wm-md h4 { font-size: 0.95em; color: var(--muted-foreground); text-transform: uppercase; letter-spacing: 0.04em; }
+.wm-md ul, .wm-md ol { margin: 0.5em 0; padding-left: 1.4em; }
+.wm-md ul { list-style: disc; }
+.wm-md ol { list-style: decimal; }
+.wm-md li { margin: 0.25em 0; padding-left: 0.15em; }
+.wm-md li::marker { color: var(--muted-foreground); }
+.wm-md li > ul, .wm-md li > ol { margin: 0.2em 0; }
+.wm-md a { color: oklch(0.55 0.17 250); text-decoration: underline; text-decoration-color: color-mix(in oklch, currentColor 35%, transparent); text-underline-offset: 2px; }
+.dark .wm-md a { color: oklch(0.75 0.13 240); }
+.wm-md a:hover { text-decoration-color: currentColor; }
+.wm-md strong { font-weight: 600; }
+.wm-md code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.86em; background: var(--muted); border-radius: 5px; padding: 0.1em 0.35em; }
+.wm-md pre { background: var(--muted); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; overflow-x: auto; font-size: 12.5px; line-height: 1.5; margin: 0.8em 0; }
+.wm-md pre code { background: none; padding: 0; font-size: inherit; }
+.wm-md blockquote { margin: 0.8em 0; padding: 0.2em 0 0.2em 0.9em; border-left: 3px solid var(--border); color: var(--muted-foreground); }
+.wm-md hr { border: 0; border-top: 1px solid var(--border); margin: 1.2em 0; }
+.wm-md table { display: block; max-width: 100%; overflow-x: auto; border-collapse: separate; border-spacing: 0; font-size: 13px; margin: 0.9em 0;
+  border: 1px solid var(--border); border-radius: 10px; }
+.wm-md th, .wm-md td { padding: 6px 10px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--border); }
+.wm-md th { font-weight: 600; background: var(--muted); white-space: nowrap; }
+.wm-md tr:last-child td { border-bottom: 0; }
+.wm-md tbody tr:nth-child(even) td { background: color-mix(in oklch, var(--muted) 45%, transparent); }
+.wm-md img { max-width: 100%; border-radius: 8px; }
+.wm-md input[type="checkbox"] { margin-right: 0.4em; }
+
+.wm-draft > :last-child::after { content: "\258D"; color: var(--muted-foreground); margin-left: 1px; animation: wm-blink 1s steps(2) infinite; }
+@keyframes wm-blink { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .wm-draft > :last-child::after { animation: none; } }
+
+.wm-scroll { scrollbar-width: thin; scrollbar-color: color-mix(in oklch, var(--muted-foreground) 35%, transparent) transparent; }

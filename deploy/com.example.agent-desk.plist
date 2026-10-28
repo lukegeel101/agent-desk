@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- macOS LaunchAgent: keeps Agent Desk running and starts it at login.
+     Replace /PATH/TO/agent-desk and /PATH/TO/node (run `which node`), then:
+       cp deploy/com.example.agent-desk.plist ~/Library/LaunchAgents/
+       launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.example.agent-desk.plist
+     Stop it with: launchctl bootout gui/$(id -u)/com.example.agent-desk -->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.example.agent-desk</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/PATH/TO/node</string>
+    <string>/PATH/TO/agent-desk/server/index.mjs</string>
+  </array>
+  <key>WorkingDirectory</key><string>/PATH/TO/agent-desk</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <!-- launchd starts with a bare PATH; include the folder that holds `claude` (run `which claude`). -->
+    <key>PATH</key><string>/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/PATH/TO/claude/bin</string>
+  </dict>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>StandardOutPath</key><string>/tmp/agent-desk.log</string>
+  <key>StandardErrorPath</key><string>/tmp/agent-desk.log</string>
+</dict>
+</plist>

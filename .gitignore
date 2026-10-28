@@ -1,0 +1,5 @@
+node_modules
+data/
+desk.env
+.DS_Store
+*.log

@@ -1,0 +1,17 @@
+# systemd user service for Linux. Edit the paths, then:
+#   mkdir -p ~/.config/systemd/user && cp deploy/agent-desk.service ~/.config/systemd/user/
+#   systemctl --user daemon-reload && systemctl --user enable --now agent-desk
+#   loginctl enable-linger $USER   # keep it running after you log out
+[Unit]
+Description=Agent Desk
+After=network-online.target
+
+[Service]
+WorkingDirectory=/PATH/TO/agent-desk
+ExecStart=/usr/bin/env node server/index.mjs
+Environment=PATH=/usr/local/bin:/usr/bin:/bin:/PATH/TO/claude/bin
+Restart=on-failure
+KillMode=mixed
+
+[Install]
+WantedBy=default.target
