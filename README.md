@@ -1,13 +1,91 @@
+<p align="center">
+  <img src="docs/images/banner.png" alt="Agent Desk: a web desk for Claude Code. Hand off a task, close the tab, come back to the result." width="100%">
+</p>
+
+<p align="center">
+  <a href="https://github.com/lukegeel101/agent-desk/actions/workflows/ci.yml"><img src="https://github.com/lukegeel101/agent-desk/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT license">
+  <img src="https://img.shields.io/badge/node-%E2%89%A520-339933" alt="Node 20 or newer">
+  <img src="https://img.shields.io/badge/server-zero%20dependencies-7dd3fc" alt="Server has zero dependencies">
+  <img src="https://img.shields.io/badge/runs-Claude%20Code-d97757" alt="Runs Claude Code">
+</p>
+
 # Agent Desk
 
-A fast web desk for Claude Code.
+**A fast web desk for Claude Code.**
 Hand off a task, close the tab, and come back to the result.
 
-![Agent Desk: conversations, a finished reply, and the "What you need to do" rail](docs/screenshot.jpg)
+<p align="center">
+  <img src="docs/images/demo.gif" alt="Handing off two tasks to Agent Desk; they run side by side while the tab is closed" width="100%">
+</p>
+
+## About
+
+Agent Desk is one web page in front of Claude Code.
+Every message you send becomes its own headless Claude Code run on a computer you leave switched on, in the folder you choose, with your own skills, MCP servers, CLAUDE.md and permission rules.
+You can run several at once, read along while they work or close the tab and walk away, follow up later in the same conversation with full memory, and see in one list exactly what is waiting on you.
+
+It is plain Node on the server with no dependencies, plus a React page, and it is MIT licensed.
+
+## Why I built it
 
 I stopped running my day from a terminal.
-Every request I would have typed into `claude` now goes into this page instead, and each one runs as its own headless Claude Code session on an always-on computer.
-I can run several at once, read along while they work, follow up later in the same conversation with full memory, and see in one rail exactly what is waiting on me.
+
+Claude Code is very good at doing the work, but a terminal is a bad place to hand work off.
+The session dies when the laptop sleeps or the window closes.
+Running three tasks means juggling three terminals.
+I can't check on anything from my phone.
+And when a run finishes, the one thing I actually need from it, the decision or sign-in or "hit send" that only I can do, is buried somewhere in a long reply.
+
+So I moved every request I would have typed into `claude` into a page instead.
+The runs live on an always-on computer at home, not in my browser, so I can hand something off from my laptop, close the lid, and check the result from my phone.
+
+## Why it's useful
+
+| In a terminal | In Agent Desk |
+|---|---|
+| The run stops when the window closes or the laptop sleeps | Runs live on the server; close the tab whenever |
+| One task per terminal, juggled by hand | Several conversations side by side, the rest queued |
+| Scroll back to find what the agent needs from you | Every "What you need to do" item lifted into one list, with Mark done |
+| Desk-bound | Works from a phone over a private network |
+| Cost and context hidden until you ask | Model, context used, tokens and cost on every reply |
+| Come back and wonder what finished | A pop, an unread count in the tab title, and a "needs you" filter |
+
+The list is the part that changed how I work.
+Agents are good at doing the work and much worse at telling you, clearly, the two things they couldn't do without you.
+Every run now ends with that list, and clearing it is most of my job.
+
+## How I use it
+
+<p align="center">
+  <img src="docs/images/how-i-use-it.png" alt="How a hand-off works: hand off, close the tab, it does the work, come back to the answer and a list of what only you can do" width="100%">
+</p>
+
+The desk runs all the time on a computer at home, started at login by the LaunchAgent in `deploy/`, in `auto` permission mode.
+During the day I hand it anything I would otherwise have done at a keyboard: look something up and summarize it, draft a reply for me to send, analyze a spreadsheet, make a change in a repository, tidy up a folder.
+I write the task the way I'd tell a person, start the next one, and close the tab.
+When I come back, I read the answers, open the files it made, clear the "What you need to do" list, and follow up in the same conversation when something needs another pass.
+
+## Screenshots
+
+**Come back to finished work.**
+The reply, the files it touched, and what each run cost.
+
+![A finished reply: which region grew fastest, with a table and a chart file](docs/images/desk-reply.jpg)
+
+**Anything only you can do lands in one list.**
+Runs are told to end with a "What you need to do" section; the page lifts it into the rail on the right and a "Needs you" filter.
+
+![The "What you need to do" rail beside a drafted landlord reply, with Mark done](docs/images/desk-needs.jpg)
+
+**From your phone.**
+The layout collapses to one pane at a time.
+
+<p align="center">
+  <img src="docs/images/phone.jpg" alt="Agent Desk on a phone: the conversation list and a conversation with its needs list" width="80%">
+</p>
+
+The screenshots use made-up sample files.
 
 ## What it does
 
@@ -80,10 +158,14 @@ Do not expose the desk to the public internet: whoever can send it a message can
 
 ## How it works
 
-```
-browser ──poll /api/state──▶ server/index.mjs ──▶ server/desk.mjs ──spawn──▶ claude -p --output-format stream-json
-                                   │                     │                           │
-                                   └── web/dist (React)  └── data/state.json          └── data/runs/<id>.jsonl
+```mermaid
+flowchart LR
+    B["Browser<br/>(laptop or phone)"] -- "poll /api/state<br/>POST /api/send" --> S["server/index.mjs"]
+    S --> D["server/desk.mjs<br/>queue + parser"]
+    D -- "spawn" --> C["claude -p<br/>--output-format stream-json"]
+    S -. "serves" .-> W["web/dist<br/>(React page)"]
+    D --> J[("data/state.json")]
+    C --> R[("data/runs/&lt;id&gt;.jsonl")]
 ```
 
 - `server/` is plain Node with no dependencies: an HTTP server, a queue, and a parser for Claude Code's stream-json events.

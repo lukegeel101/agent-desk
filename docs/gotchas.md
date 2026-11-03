@@ -26,3 +26,13 @@ Fix: `childEnv()` in `server/desk.mjs` removes `CLAUDECODE` and `CLAUDE_CODE_ENT
 
 `acceptEdits` alone would block Bash, but a run may still use it when your `~/.claude/settings.json` allows that command.
 This is intended (your permission rules apply), but it means two people with the same `DESK_PERMISSION_MODE` can see different behaviour.
+
+## Screenshots of a real desk show your working folder and username
+
+The empty state and the live step text print the full `DESK_WORKDIR` path, which includes your home folder name.
+Fix: when taking README screenshots, rewrite every `/api/` response in the browser (a Playwright `route`) to replace the folder with `~/work`, and use a scratch folder of made-up files.
+
+## Screenshots of an old conversation show the "Cold resume" notice
+
+A conversation idle for more than the prompt-cache lifetime shows a notice that the next message reads its context again.
+This is expected; take screenshots soon after the runs if you want a page without it.
