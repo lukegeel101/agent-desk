@@ -56,7 +56,9 @@ function cookie(req, name) {
 export function createDesk(config = loadConfig(), { confirm } = {}) {
   const store = new Store(config.data)
   const desk = new Desk(config, store)
-  const permission = { confirm: confirmKind(config), scopes: scopes(config).map(({ id, label, path }) => ({ id, label, path })) }
+  // A caller that brings its own confirmation (the tests do) has a way to ask, whatever the platform.
+  const kindOfConfirm = confirm && config.permissionConfirm !== "none" ? "dialog" : confirmKind(config)
+  const permission = { confirm: kindOfConfirm, scopes: scopes(config).map(({ id, label, path }) => ({ id, label, path })) }
 
   // With DESK_TOKEN set, open the page once as /?token=<token>; it stores the token in a cookie and drops it from the URL.
   function authorized(req, url) {
@@ -87,7 +89,7 @@ export function createDesk(config = loadConfig(), { confirm } = {}) {
     "/api/needs-done": (b) => desk.needsDone(String(b.id || "")),
     "/api/archive": (b) => desk.archive(String(b.thread || ""), b.archived !== false),
     // Waits for the click in the on-screen dialog (up to 2 minutes) before it answers.
-    "/api/permissions": (b) => addPermissions(config, b, confirm ? { confirm } : {}),
+    "/api/permissions": (b) => addPermissions(config, b, confirm ? { confirm, kindOfConfirm } : { kindOfConfirm }),
   }
 
   const server = createServer(async (req, res) => {

@@ -58,3 +58,8 @@ Fix: only `turn.failed` marks a Codex run as failed; a lone `error` item is igno
 
 While testing, a script tried to click Add in the confirmation dialog through System Events, and the session's own safety check refused it.
 That refusal is the point of the dialog: the test now injects a stand-in for the dialog, and a recording desk uses `DESK_PERMISSION_CONFIRM=none` with rules that go to its throwaway data folder.
+
+## The permission test passed on macOS and failed in CI
+
+CI runs on Linux without `zenity`, so the desk decided it had no way to ask and refused the write before the test's stand-in dialog was ever called.
+Fix: `createDesk(config, { confirm })` treats an injected confirmation as a dialog on any platform; the platform rules themselves are tested separately with the platform passed in.
