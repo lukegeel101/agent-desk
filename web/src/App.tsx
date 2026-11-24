@@ -249,7 +249,7 @@ function Intro({ state, onIdea, composer, onBack }: { state: State; onIdea: (ide
           <span className="mx-auto mb-4 flex size-10 items-center justify-center rounded-xl bg-foreground text-background"><Sparkles className="size-5" /></span>
           <h2 className="text-lg font-semibold tracking-tight">What should get done?</h2>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            Each message runs as a Claude Code session in <code className="font-mono text-[12.5px]">{state.workdir}</code>.
+            Each message runs as a Claude Code session (or a Codex one, if you pick an OpenAI model) in <code className="font-mono text-[12.5px]">{state.workdir}</code>.
             Close this page whenever you like; it keeps working, and follow-ups in a conversation remember what came before.
           </p>
           <div className="mt-6 grid gap-2 text-left sm:grid-cols-2">

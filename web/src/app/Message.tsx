@@ -4,7 +4,7 @@ import { Clock, Square, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { stopRequest } from "@/shared/actions"
+import { openPermission, stopRequest } from "@/shared/actions"
 import { ago, duration, fmtTok, local, type Detail, type Request, type Thread } from "@/shared/desk"
 import { queuedWhy, shortTool, stepText } from "./lib"
 import { AuthorMark, Markdown, StatusBadge } from "./parts"
@@ -100,7 +100,7 @@ function Reply({ t, r, d, now, timeoutSeconds, slots, latest }: {
       )}>
         <div className="mb-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
           <StatusBadge r={r} />
-          <span className="font-medium text-foreground">Claude</span>
+          <span className="font-medium text-foreground">{r.provider === "openai" ? "Codex" : "Claude"}</span>
           {r.startedAt && <span>started {local(r.startedAt)}</span>}
           {metaBits(r).length > 0 && <span className="text-muted-foreground/90">· {metaBits(r).join(" · ")}</span>}
           <StopButton r={r} />
@@ -109,9 +109,17 @@ function Reply({ t, r, d, now, timeoutSeconds, slots, latest }: {
         {refused.length > 0 && (
           <Alert25 className="mt-3" title={`${refused.length} action${refused.length === 1 ? " was" : "s were"} refused by the permission mode`}>
             <ul className="mt-1 space-y-1">
-              {refused.map((x, i) => <li key={i} className="[overflow-wrap:anywhere]"><span className="font-mono">{shortTool(x.tool)}</span> {x.what}</li>)}
+              {refused.map((x, i) => (
+                <li key={i} className="flex flex-wrap items-center gap-x-2 gap-y-1 [overflow-wrap:anywhere]">
+                  <span><span className="font-mono">{shortTool(x.tool)}</span> {x.what}</span>
+                  {x.rule && (
+                    <Button type="button" size="xs" variant="outline" className="rounded-full" title={`Open Add permission with ${x.rule}`}
+                      onClick={() => openPermission(x.rule)}>Allow this</Button>
+                  )}
+                </li>
+              ))}
             </ul>
-            <p className="mt-1">To allow one, add a permission rule to your Claude Code settings, or change DESK_PERMISSION_MODE.</p>
+            <p className="mt-1">To allow one, use Add permission under the message box, then send the message again.</p>
           </Alert25>
         )}
         {d?.stderr && r.status === "failed" && (

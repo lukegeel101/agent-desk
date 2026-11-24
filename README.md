@@ -49,6 +49,8 @@ The runs live on an always-on computer at home, not in my browser, so I can hand
 | Scroll back to find what the agent needs from you | Every "What you need to do" item lifted into one list, with Mark done |
 | Desk-bound | Works from a phone over a private network |
 | Cost and context hidden until you ask | Model, context used, tokens and cost on every reply |
+| A refused action means opening a settings file | "Allow this" next to the refused action, confirmed on the computer's own screen |
+| One vendor's models per tool | Claude and OpenAI models in one picker, switchable mid-conversation |
 | Come back and wonder what finished | A pop, an unread count in the tab title, and a "needs you" filter |
 
 The list is the part that changed how I work.
@@ -96,6 +98,8 @@ The screenshots use made-up sample files.
 - **"What you need to do".** Runs are told to end with that section when only you can do something; the page lifts those items into a rail and a "needs you" filter, with Mark done.
 - **Close the tab whenever.** Runs live on the server, not in the browser; a pop plays and the tab title counts unread replies when they finish.
 - **Context and cost at a glance.** Model, context used, tokens, run time, turns and the API-equivalent cost of each reply and conversation.
+- **Add permission.** A refused action gets an "Allow this" button that opens the Add permission panel with the rule filled in; you can also type rules or paste an agent's JSON suggestion. Nothing is written until you click Add in a dialog on the desk computer's own screen, so an agent cannot grant itself a permission.
+- **Claude or OpenAI models.** With the [Codex CLI](https://github.com/openai/codex) installed and signed in, the model picker also lists OpenAI models, which run through `codex exec`. You can switch between messages of one conversation; the new model is handed what the other one was asked and answered.
 - **Fast to drive.** Enter sends, `N` starts a conversation, Shift+Up/Down switches conversations, Shift+Left/Right steps through messages, drafts are kept per conversation.
 - **Titles, links, archive.** Conversations get a short title from a quick Haiku call, every link a reply mentions sits behind one Links button, and finished conversations can be archived.
 - **Works on a phone.** The layout collapses to one pane at a time.
@@ -122,7 +126,9 @@ The ones that matter most:
 |---|---|---|
 | `DESK_WORKDIR` | your home folder | The folder every run starts in |
 | `DESK_PERMISSION_MODE` | `acceptEdits` | How runs may act without asking: `acceptEdits`, `auto` or `bypassPermissions` |
-| `DESK_MODEL` | `sonnet` | Default model for new messages (`opus`, `sonnet`, `haiku`); the page's picker overrides it |
+| `DESK_MODEL` | `sonnet` | Default model for new messages (`opus`, `sonnet`, `haiku`, or an OpenAI model id); the page's picker overrides it |
+| `DESK_OPENAI_MODELS` | the Codex CLI's own list | OpenAI models to offer, as `id=Label, id2=Label2`; `off` hides them. They appear only when `codex` is installed |
+| `DESK_PERMISSION_CONFIRM` | `dialog` | `none` lets Add permission write without the on-screen dialog (see Permissions) |
 | `DESK_MAX_PARALLEL` | `3` | Runs at once |
 | `DESK_TIMEOUT_MIN` | `60` | A run is stopped after this many minutes |
 | `DESK_EXTRA_ARGS` | none | Extra `claude` flags for every run, such as `--chrome` or `--add-dir ~/notes` |
@@ -136,6 +142,34 @@ Nobody is at a terminal to approve prompts, so the permission mode decides what 
 `bypassPermissions` allows everything; use it only on a machine and account you are comfortable handing over completely.
 
 The built-in instructions also tell every run that your message approves only the actions it names, and to ask before anything destructive, irreversible, or sent on your behalf.
+
+#### Add permission
+
+When a run is refused something you do want it to do, press **Allow this** next to the refused action, or **Add permission** under the message box.
+The panel takes Claude Code permission rules, one per line (`Bash(npm test *)`, `mcp__linear__save_issue`), for the allow, ask or deny list, plus optional `autoMode.allow` sentences.
+Pasting an agent's JSON suggestion (`{"permissions": {"allow": [...]}}`) fills it in.
+
+Rules go to one of four places:
+
+| Where | File | Applies to |
+|---|---|---|
+| This desk's runs only (default) | `data/claude-settings.json`, passed to each run with `--settings` | Runs started from the desk, in any folder |
+| User settings | `~/.claude/settings.json` | Every Claude Code session and project |
+| This folder, shared | `<DESK_WORKDIR>/.claude/settings.json` | That folder, once it is trusted in Claude Code |
+| This folder, only me | `<DESK_WORKDIR>/.claude/settings.local.json` | That folder, once it is trusted in Claude Code |
+
+The agents the desk runs can reach its local API too, so a request alone never writes a rule.
+The server shows a dialog on its own screen listing every entry and the file, and writes only when someone clicks Add there (macOS; on Linux it uses `zenity`).
+The file is backed up first, and each entry is read back after the write.
+Allowing every shell command (`Bash`, `Bash(*)`) is refused.
+On a headless machine with no way to show a dialog nothing is written, unless you set `DESK_PERMISSION_CONFIRM=none` and accept that anything on that computer could then add a rule.
+
+### OpenAI models
+
+Install the Codex CLI and sign in (`codex login`), then restart the desk: its models appear in the picker under "OpenAI (Codex)".
+A conversation keeps one session per provider, so switching back and forth resumes each side and hands it only the messages it has not seen.
+OpenAI runs are sandboxed by Codex rather than by Claude Code's permission rules: `acceptEdits` and `auto` let a run write inside the working folder with no network (`auto` also sends anything beyond that to Codex's automatic approval review), and `bypassPermissions` removes the sandbox.
+Codex reports tokens and context but no dollar cost, so those replies show no cost.
 
 ## Run it all the time
 

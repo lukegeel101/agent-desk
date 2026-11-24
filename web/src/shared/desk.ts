@@ -14,6 +14,7 @@ export interface Request {
   thread: string
   text: string
   model: string
+  provider?: "claude" | "openai"
   modelLabel?: string
   at: string
   startedAt?: string
@@ -30,7 +31,7 @@ export interface Request {
   runCostUsd?: number
   browserCalls?: number
   subagents?: number
-  refused?: { tool: string; what?: string }[]
+  refused?: { tool: string; what?: string; rule?: string }[]
   needs?: string[]
   links?: Link[]
   lastStep?: Step | null
@@ -45,7 +46,9 @@ export interface State {
   titles: Record<string, string>
   archived: Record<string, string>
   models: Record<string, string> // alias -> label, e.g. opus -> "Opus 5.5"
+  providers: Record<string, "claude" | "openai"> // alias -> which CLI runs it
   chosenModel: string
+  permission: { confirm: "dialog" | "none" | "unavailable"; scopes: { id: string; label: string; path: string }[] }
   timeoutSeconds: number
   maxParallel: number
   workdir: string

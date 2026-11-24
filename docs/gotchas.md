@@ -36,3 +36,25 @@ Fix: when taking README screenshots, rewrite every `/api/` response in the brows
 
 A conversation idle for more than the prompt-cache lifetime shows a notice that the next message reads its context again.
 This is expected; take screenshots soon after the runs if you want a page without it.
+
+## A folder's own permission rules are ignored until the folder is trusted
+
+A rule added to `<DESK_WORKDIR>/.claude/settings.json` had no effect: the run was still refused, and its error output said "Ignoring 1 permissions.allow entry from .claude/settings.json: this workspace has not been trusted".
+Claude Code reads a project's settings only after the trust prompt has been accepted in that folder, and trust is per folder, not inherited from a trusted parent.
+Fix: Add permission defaults to "This desk's runs only", a settings file in the desk's data folder that every Claude run gets with `--settings`, which works in any folder.
+The two folder choices remain and say that the folder must be trusted.
+
+## `codex exec --json` gives a turn's total tokens, not the context size
+
+The `turn.completed` event sums every model call of the turn, so a small task that made three calls looked like it held three times its real context.
+Fix: the context figure comes from the newest `token_count` record in the session file the Codex CLI keeps under `~/.codex/sessions` (`last_token_usage.total_tokens` and `model_context_window`).
+
+## Codex prints an `error` item that is not a failure
+
+A run can start with `{"type":"item.completed","item":{"type":"error","message":"Skill descriptions were shortened..."}}` and still succeed.
+Fix: only `turn.failed` marks a Codex run as failed; a lone `error` item is ignored.
+
+## An agent must not be able to click its own permission dialog
+
+While testing, a script tried to click Add in the confirmation dialog through System Events, and the session's own safety check refused it.
+That refusal is the point of the dialog: the test now injects a stand-in for the dialog, and a recording desk uses `DESK_PERMISSION_CONFIRM=none` with rules that go to its throwaway data folder.

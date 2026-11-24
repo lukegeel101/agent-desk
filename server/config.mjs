@@ -1,4 +1,5 @@
 // Settings come from environment variables (or a .env-style `desk.env` next to package.json), with safe defaults.
+import { spawnSync } from "node:child_process"
 import { existsSync, readFileSync } from "node:fs"
 import { homedir } from "node:os"
 import { dirname, join, resolve } from "node:path"
@@ -39,6 +40,10 @@ export function loadConfig(env = process.env) {
     workdir: tilde(env.DESK_WORKDIR || homedir()),
     data: tilde(env.DESK_DATA || join(ROOT, "data")),
     claude: tilde(env.DESK_CLAUDE || "claude"),
+    codex: tilde(env.DESK_CODEX || "codex"),
+    codexHome: tilde(env.CODEX_HOME || join(homedir(), ".codex")),
+    claudeHome: tilde(env.DESK_CLAUDE_HOME || join(homedir(), ".claude")),
+    permissionConfirm: env.DESK_PERMISSION_CONFIRM === "none" ? "none" : "dialog",
     maxParallel: int("DESK_MAX_PARALLEL", 3),
     timeoutSeconds: int("DESK_TIMEOUT_MIN", 60) * 60,
     permissionMode: env.DESK_PERMISSION_MODE || "acceptEdits",
@@ -53,7 +58,41 @@ export function loadConfig(env = process.env) {
   if (!loopback && !config.token) {
     throw new Error(`DESK_HOST is ${config.host}, which other machines can reach, but DESK_TOKEN is empty. Set DESK_TOKEN to a long random string first.`)
   }
+  config.models = { ...CLAUDE_MODELS, ...openaiModels(env, config) }
   return config
 }
 
-export const MODELS = { opus: "Opus", sonnet: "Sonnet", haiku: "Haiku" }
+// Every model the page offers: alias -> { label, provider, window? }. Claude models run through `claude -p`, OpenAI
+// models through `codex exec`, each on that CLI's own sign-in.
+export const CLAUDE_MODELS = {
+  opus: { label: "Opus", provider: "claude" },
+  sonnet: { label: "Sonnet", provider: "claude" },
+  haiku: { label: "Haiku", provider: "claude" },
+}
+
+// OpenAI models appear only when the Codex CLI is installed. DESK_OPENAI_MODELS names them ("gpt-x=GPT X, gpt-y");
+// otherwise the list is the one the Codex CLI itself shows, read from its models cache. DESK_OPENAI_MODELS=off hides them.
+function openaiModels(env, config) {
+  const setting = (env.DESK_OPENAI_MODELS || "").trim()
+  if (setting.toLowerCase() === "off") return {}
+  const found = {}
+  if (setting) {
+    for (const part of setting.split(",")) {
+      const [id, label] = part.split("=").map((x) => x.trim())
+      if (/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(id || "")) found[id] = { label: label || id, provider: "openai" }
+    }
+  }
+  let cache = []
+  try { cache = JSON.parse(readFileSync(join(config.codexHome, "models_cache.json"), "utf8")).models || [] } catch { /* no cache */ }
+  for (const m of cache) {
+    if (!m || typeof m.slug !== "string") continue
+    if (found[m.slug]) found[m.slug].window = Number(m.context_window) || undefined
+    else if (!setting && m.visibility === "list") found[m.slug] = { label: m.display_name || m.slug, provider: "openai", window: Number(m.context_window) || undefined }
+  }
+  if (!Object.keys(found).length) return {}
+  try {
+    const probe = spawnSync(config.codex, ["--version"], { timeout: 10000, stdio: "ignore" })
+    if (probe.error || probe.status !== 0) return {}
+  } catch { return {} }
+  return found
+}
