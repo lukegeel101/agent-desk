@@ -1,6 +1,6 @@
 // The message box, the model picker and the conversation's actions next to Send.
-import type { Ref, RefObject } from "react"
-import { Archive, ArchiveRestore, ArrowUp, Keyboard } from "lucide-react"
+import { useEffect, useState, type Ref, type RefObject } from "react"
+import { Archive, ArchiveRestore, ArrowUp, Keyboard, ShieldPlus } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Kbd } from "@/components/ui/kbd"
@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils"
 import { fmtTok, type State, type Thread } from "@/shared/desk"
 import { archive, saveModel } from "@/shared/actions"
 import { lastModelRun, modelName, modelOptions } from "./lib"
+import { PermissionPanel } from "./Permission"
 import Select10 from "./ui/select-10"
 import Textarea14 from "./ui/textarea-14"
 import Tooltip8 from "./ui/tooltip-8"
@@ -27,7 +28,16 @@ export function Composer({ t, state, text, setText, model, setModel, flash, now,
   onArchived: () => void
 }) {
   const last = t ? lastModelRun(t) : undefined
-  const modelNote = last && last.model !== model ? `Last reply ran on ${last.modelLabel || last.model}; your next message uses ${modelName(state.models, model)}.` : ""
+  const switched = !!last && (last.provider || "claude") !== (state.providers[model] || "claude")
+  const modelNote = last && last.model !== model
+    ? `Last reply ran on ${last.modelLabel || last.model}; your next message uses ${modelName(state.models, model)}${switched ? ", which is handed the conversation so far" : ""}.` : ""
+  // The Add permission panel: closed until its button is pressed, or opened with a rule by a refused action's button.
+  const [perm, setPerm] = useState<{ open: boolean; seed: string; n: number }>({ open: false, seed: "", n: 0 })
+  useEffect(() => {
+    const on = (e: Event) => setPerm((p) => ({ open: true, seed: (e as CustomEvent<string>).detail || "", n: p.n + 1 }))
+    window.addEventListener("desk-permission", on)
+    return () => window.removeEventListener("desk-permission", on)
+  }, [])
   const send = () => { if (text.trim() && !sending) onSend() }
 
   return (
@@ -56,9 +66,15 @@ export function Composer({ t, state, text, setText, model, setModel, flash, now,
           <ArrowUp className="size-4" />
         </Button>
       </div>
+      {perm.open && <PermissionPanel key={perm.n} state={state} seed={perm.seed} />}
       <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
         <Select10 label="Model" value={model} onValueChange={(v) => { setModel(v); void saveModel(v) }}
-          groups={modelOptions(state.models)} title="Saved on the server, so every browser sends the same model" />
+          groups={modelOptions(state.models, state.providers)} title="Saved on the server, so every browser sends the same model. You can change it between messages of one conversation." />
+        <Button type="button" variant="outline" size="xs" className="gap-1 rounded-full" aria-expanded={perm.open} aria-controls="desk-perm-panel"
+          title="Add a Claude Code permission rule without opening a terminal"
+          onClick={() => setPerm((p) => ({ open: !p.open, seed: "", n: p.n + 1 }))}>
+          <ShieldPlus className="size-3.5" /> Add permission
+        </Button>
         <Tooltip8
           trigger={<Button type="button" variant="ghost" size="xs" className="gap-1 text-muted-foreground"><Keyboard className="size-3.5" /> Shortcuts</Button>}
         >

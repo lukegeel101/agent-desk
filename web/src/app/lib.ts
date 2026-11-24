@@ -44,8 +44,10 @@ export function sumOf(t: Thread, key: "turns" | "browserCalls" | "subagents") {
 }
 
 const HINTS: Record<string, string> = { opus: "deepest", sonnet: "balanced", haiku: "quick" }
-export function modelOptions(models: Record<string, string>) {
-  return [{ label: "Claude", options: Object.entries(models).map(([value, label]) => ({ value, label: `${label}${HINTS[value] ? ` (${HINTS[value]})` : ""}` })) }]
+export function modelOptions(models: Record<string, string>, providers: Record<string, string> = {}) {
+  const of = (provider: string) => Object.entries(models).filter(([value]) => (providers[value] || "claude") === provider)
+    .map(([value, label]) => ({ value, label: `${label}${HINTS[value] ? ` (${HINTS[value]})` : ""}` }))
+  return [{ label: "Claude (Claude Code)", options: of("claude") }, { label: "OpenAI (Codex)", options: of("openai") }].filter((g) => g.options.length)
 }
 export const modelName = (models: Record<string, string>, key: string) => models[key] || key
 
